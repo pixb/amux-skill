@@ -1,8 +1,8 @@
 # Verification: amux-skill
 
-<!-- agent-skill-verification: {"clean": false, "commit": "604a228540754f832e459628e269be48cba1979c", "fingerprint": "583702805f78e6f641628f9cee3620f78dd03e9c542d2a887b615988f902a58d", "version": "1.0.0"} -->
+<!-- agent-skill-verification: {"clean": true, "commit": "8605682825be35d19b069b7794e0acb7e85d52cb", "fingerprint": "583702805f78e6f641628f9cee3620f78dd03e9c542d2a887b615988f902a58d", "version": "1.0.0"} -->
 
-Generated: 2026-09-29T17:18:11Z
+Generated: 2026-09-29T17:20:08Z
 
 ## Release evidence
 
@@ -14,8 +14,8 @@ Generated: 2026-09-29T17:18:11Z
 ## Gates
 
 - PASS — specification
-- FAIL — security
-- FAIL — skill graph
+- PASS — security
+- PASS — skill graph
 
 ## Interpretation
 
