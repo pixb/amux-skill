@@ -1,8 +1,8 @@
 # Verification: amux-skill
 
-<!-- agent-skill-verification: {"clean": true, "commit": "0c17587afe74f837ff18308c565f128e2af627de", "fingerprint": "58af0e585f56933e2a679ac59418c718cbb2f27bdad927f8094a192e92457da9", "version": "1.0.0"} -->
+<!-- agent-skill-verification: {"clean": true, "commit": "236491a515520046a534372bd11cab1c7f5237ba", "fingerprint": "58af0e585f56933e2a679ac59418c718cbb2f27bdad927f8094a192e92457da9", "version": "1.0.0"} -->
 
-Generated: 2026-09-29T21:03:24Z
+Generated: 2026-09-29T21:04:06Z
 
 ## Release evidence
 
