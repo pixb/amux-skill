@@ -1,0 +1,41 @@
+{
+  "entries": {
+    "3d3d74e721c032cfbd360f39e8a2ed12be90deb47fa8be30aa55c7707c635467": {
+      "duration_ms": 82.52,
+      "exit_code": 0,
+      "stderr": "",
+      "stdout": "{\n  \"clean\": true,\n  \"issues\": []\n}\n"
+    },
+    "74bee70c6b9371c4e1385983085b046863cbeaa962a917571ffca80811e8fafd": {
+      "duration_ms": 105.442,
+      "exit_code": 0,
+      "stderr": "",
+      "stdout": "VALID amux.eval.md\n"
+    },
+    "91853e27807d4e043640123b97613beda194599d8e7a37b48b845a4dd3a4a939": {
+      "duration_ms": 81.331,
+      "exit_code": 0,
+      "stderr": "",
+      "stdout": "{\n  \"valid\": true,\n  \"errors\": [],\n  \"warnings\": []\n}\n"
+    },
+    "971621314ee4530f9762e32913248f1b09b85e23ca5592dc26e317cfcace7753": {
+      "duration_ms": 79.411,
+      "exit_code": 0,
+      "stderr": "",
+      "stdout": "{\n  \"clean\": true,\n  \"issues\": []\n}\n"
+    },
+    "a5d3aa1414877938939e205649f4db2b94dce9153c383e279bed000bd1d40f3e": {
+      "duration_ms": 111.337,
+      "exit_code": 0,
+      "stderr": "",
+      "stdout": "{\n  \"clean\": true,\n  \"issues\": []\n}\n"
+    },
+    "c435dff180c1f92ec968aebcb1adf0a3edbd9f319d083c9a92cc89c9e765cc78": {
+      "duration_ms": 155.147,
+      "exit_code": 0,
+      "stderr": "",
+      "stdout": "{\n  \"errors\": [],\n  \"warnings\": []\n}\n"
+    }
+  },
+  "version": 1
+}

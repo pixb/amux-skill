@@ -1,0 +1,191 @@
+{
+  "question": "How do I operate the amux service (board, projects, workers, schedules, memory, diagnostics) from any agent session over its HTTP API?",
+  "trigger": [
+    "amux",
+    "AMUX-* board card",
+    "amux worker status",
+    "amux schedule or memory",
+    "$AMUX_URL API call"
+  ],
+  "decision": [
+    "which API family matches the request (board vs projects vs workers vs schedules vs memories vs diagnostics)",
+    "whether a write operation must be confirmed with the user before it is executed",
+    "how to handle a 401, 404, or gate-blocked 409 response"
+  ],
+  "evidence": [
+    "HTTP status code and JSON body returned by the amux API",
+    "GET /health status field",
+    "GET /api/debug/routes live route table",
+    "card id and status echoed back by the board API"
+  ],
+  "success_measure": "The requested operation completes with a 2xx response and its result is visible in the amux dashboard (for example the card exists with the intended status).",
+  "outcome": "Any agent session can operate the amux service over its HTTP API without repo-specific knowledge.",
+  "intended_users": [
+    "agent sessions on LAN hosts",
+    "operator running the amux dashboard"
+  ],
+  "input_types": [
+    "natural-language request",
+    "card id",
+    "worker name"
+  ],
+  "output_artifacts": [
+    "HTTP 2xx response",
+    "board card state change",
+    "diagnostic JSON"
+  ],
+  "use_cases": [
+    "create, claim, and advance board cards",
+    "create a project and submit an outcome that the server decomposes into project tasks",
+    "list and message workers/sessions",
+    "read and write session or global memory",
+    "create, trigger, and inspect schedules",
+    "read health and diagnostic endpoints"
+  ],
+  "examples": [
+    {
+      "invocation": "/amux-skill board add \"fix login error copy\"",
+      "description": "Create a board card through the /amux-skill skill"
+    },
+    {
+      "invocation": "/amux-skill projects create my-project \"build the import page\"",
+      "description": "Create an amux project and submit its first outcome"
+    },
+    {
+      "invocation": "/amux-skill workers",
+      "description": "List amux workers with their current status"
+    },
+    {
+      "invocation": "/amux-skill health",
+      "description": "Check amux service health and build info"
+    }
+  ],
+  "permissions_systems": [
+    "outbound HTTPS to $AMUX_URL",
+    "env AMUX_URL",
+    "env AMUX_AUTH_TOKEN"
+  ],
+  "typical_completion_time": "under one minute",
+  "support_tier": "community",
+  "compatibility": {
+    "declared": [
+      "opencode",
+      "claude code",
+      "codex cli",
+      "gemini cli"
+    ]
+  },
+  "environment": {
+    "documentation_sources": [
+      "GET /api/debug/routes on the running server (live route table, wins over any written doc)",
+      "the API map documented in SKILL.md",
+      "references/long-tail.md in this skill directory (per-route examples for the long-tail families)"
+    ],
+    "data_sources": [
+      "amux HTTP API at $AMUX_URL"
+    ],
+    "required_capabilities": [
+      "bash",
+      "curl with -k (self-signed TLS)",
+      "network reachability to the amux host on port 8824"
+    ],
+    "readiness_checks": [
+      "GET /health returns HTTP 200",
+      "GET /api/board with Authorization: Bearer returns HTTP 200"
+    ]
+  },
+  "risk": {
+    "tier": "moderate",
+    "permissions": [
+      "outbound HTTPS requests to $AMUX_URL",
+      "read environment variable AMUX_URL",
+      "read environment variable AMUX_AUTH_TOKEN"
+    ],
+    "mutation_boundary": "approval-required",
+    "approval_required": [
+      "confirm with the user before write calls: create/update/delete board cards, create or reconfigure projects, send messages to workers, trigger schedules"
+    ]
+  },
+  "software_mutation": {
+    "applies": false
+  },
+  "data_interfaces": {
+    "applies": true,
+    "interface_types": [
+      "api"
+    ],
+    "authoritative_sources": [
+      "amux HTTP API, verified against GET /api/debug/routes on the live server"
+    ],
+    "entities": [
+      "board cards",
+      "projects and their tasks",
+      "workers/sessions",
+      "schedules",
+      "memories/notes"
+    ],
+    "identifiers": [
+      "card id (AMUX-<n>)",
+      "project name",
+      "worker id",
+      "schedule id",
+      "memory id"
+    ],
+    "relationships": [
+      "a card optionally names the session/worker that owns it",
+      "a project task carries project_group naming the project it belongs to",
+      "a schedule targets exactly one session",
+      "a memory is scoped global, group, or worker"
+    ],
+    "field_semantics": [
+      "status is backlog/todo/doing/done plus custom columns; verified is a separate gate from done",
+      "gate is a list of criteria derived from the card type",
+      "source_ref is the evidence pointer required for done"
+    ],
+    "invariants": [
+      "card ids increase monotonically and are never reused",
+      "non-todo status transitions are gated by type-derived criteria",
+      "done requires source_ref"
+    ],
+    "freshness_and_pagination": [
+      "board, workers and schedules reads are full-snapshot responses (no pagination on the routes documented here)",
+      "diagnostic endpoints take a since_h window"
+    ],
+    "nullability": [
+      "optional fields such as desc, session, end, location may be absent; treat missing as unset, not as an error"
+    ],
+    "readiness_checks": [
+      "GET /health reports status ok",
+      "GET /api/board with Bearer token returns 200",
+      "GET /api/debug/routes lists every route family this skill uses"
+    ]
+  },
+  "semantic_recon": {
+    "sources": [
+      {
+        "id": "amux-http-api",
+        "type": "api",
+        "reuse": "recurring",
+        "impact": "high",
+        "contract_id": "amux_api",
+        "contract_path": "contracts/data_contract_amux_api"
+      }
+    ]
+  },
+  "semantic_contract": {
+    "applies": false
+  },
+  "routing_tests": {
+    "should_trigger": [
+      "add a task to the amux board",
+      "move AMUX-42 to doing",
+      "check amux worker status",
+      "create an amux project and submit its first goal"
+    ],
+    "should_not_trigger": [
+      "create a React component",
+      "fix this pytest error",
+      "add an install section to the README"
+    ]
+  }
+}

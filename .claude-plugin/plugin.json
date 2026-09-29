@@ -1,0 +1,8 @@
+{
+  "name": "amux-skill",
+  "version": "1.0.0",
+  "description": "Use when the user mentions amux, the AMUX-* kanban board, board cards or gates, amux projects or project tasks, amux workers/sessions, schedules, memory or notes, Telegram routing, browser automation, CRM, or debugging the amux server/API — talks to the amux HTTP API with curl using $AMUX_URL and $AMUX_AUTH_TOKEN.",
+  "author": {
+    "name": "amux"
+  }
+}

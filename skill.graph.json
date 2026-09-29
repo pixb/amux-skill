@@ -1,0 +1,262 @@
+{
+  "artifacts": [
+    {
+      "id": "claude_plugin_marketplace_json",
+      "path": ".claude-plugin/marketplace.json",
+      "sha256": "6ab151de34a0594db7171594b53838363b61f8c5765a6b7387193e95026de8ef",
+      "type": "package_file"
+    },
+    {
+      "id": "claude_plugin_plugin_json",
+      "path": ".claude-plugin/plugin.json",
+      "sha256": "1693e96c309bc48e2a7ce7c730b27a01292a862e38458293a7c87cee900290f4",
+      "type": "package_file"
+    },
+    {
+      "id": "agents_document",
+      "path": "AGENTS.md",
+      "sha256": "ce4cf038b04a190cc7933b9d5fab66c4733aa462c9a306033e49eb12f1667a10",
+      "type": "companion_instruction"
+    },
+    {
+      "id": "evolution_md",
+      "path": "EVOLUTION.md",
+      "sha256": "23b7132711472cd60fe65775721d8a69feea450b768fc824b6e8409992840beb",
+      "type": "package_file"
+    },
+    {
+      "id": "readme_md",
+      "path": "README.md",
+      "sha256": "1bc7e6c601454733ad46d9bc96ee345883da63016b664cd38ec2c3e4c457e0e0",
+      "type": "package_file"
+    },
+    {
+      "id": "skill_document",
+      "path": "SKILL.md",
+      "sha256": "3602cfc91ca4fb1b865e2fea424865bb3a6d974bf8230e3fd70e32b2ccc9bfc1",
+      "type": "instruction"
+    },
+    {
+      "id": "verification_md",
+      "path": "VERIFICATION.md",
+      "sha256": "82bc757d78226ec0b976289f60cfd607e50492e62f12cf01ae0a7cad5ace62a6",
+      "type": "package_file"
+    },
+    {
+      "id": "contracts_data_contract_amux_api_contract_id",
+      "path": "contracts/data_contract_amux_api/.contract_id",
+      "sha256": "a6f9f6aaeb6a46131ae4102c69533ca5aacc1e7da08160e1ef76aafa57a83e2c",
+      "type": "package_file"
+    },
+    {
+      "id": "contracts_data_contract_amux_api_code_contract_health_py",
+      "path": "contracts/data_contract_amux_api/code/contract_health.py",
+      "sha256": "b1e52c32bc8471819c7705028241085eef042502951b8ce930519839f4bb56d8",
+      "type": "package_file"
+    },
+    {
+      "id": "discovery_json",
+      "path": "discovery.json",
+      "sha256": "fea153ae9d8b3f1e02431695ab70e59e4f67ae287845d9fc7a2f971c9f3e6eaf",
+      "type": "package_file"
+    },
+    {
+      "id": "evals_amux_eval_md",
+      "path": "evals/amux.eval.md",
+      "sha256": "f5fa72581b0dcab35f5d2abe8e6cce8bf4df3aad67ec0e49d5dae3d97fa5d75c",
+      "type": "eval_spec"
+    },
+    {
+      "id": "board_status_expected",
+      "path": "evals/golden/board-status/expected.json",
+      "sha256": "9b797e918a2ac6eced8d48f8cf0869f513cfa52adcf9637aff4f789b59e9f6b8",
+      "type": "expected_output"
+    },
+    {
+      "id": "board_status_input",
+      "path": "evals/golden/board-status/input.txt",
+      "sha256": "abf1236c803291644bec795f88750ee430fa385e9c810f23eb197b7fd93ca57d",
+      "type": "golden_input"
+    },
+    {
+      "id": "diagnostics_expected",
+      "path": "evals/golden/diagnostics/expected.json",
+      "sha256": "01072af5b12307a9aa2881c2ff03149fdbd196db5f4d49de94774afef7343cb1",
+      "type": "expected_output"
+    },
+    {
+      "id": "diagnostics_input",
+      "path": "evals/golden/diagnostics/input.txt",
+      "sha256": "3b7406830497e0ab1c8204192d658c78a90ad7575ad5463020f38c5696e722c2",
+      "type": "golden_input"
+    },
+    {
+      "id": "remote_401_input",
+      "path": "evals/golden/remote-401/input.txt",
+      "sha256": "40f43ca5946f7a1005633feb533e91573bf5a824666f69982f9c5224b51ff7cb",
+      "type": "golden_input"
+    },
+    {
+      "id": "install_ps1",
+      "path": "install.ps1",
+      "sha256": "6baa9dcf220997302feed8bdfd2ff91701dea94e0df38abdf323cbf84cb912a4",
+      "type": "package_file"
+    },
+    {
+      "id": "install_sh",
+      "path": "install.sh",
+      "sha256": "0c8384442650738fb1e0fcdf40a6a4676b6c592a794540107c0a204ff64b6ccd",
+      "type": "package_file"
+    },
+    {
+      "id": "references_long_tail_md",
+      "path": "references/long-tail.md",
+      "sha256": "ac7b883f8e13833dccfe80f288a66f79cbd1d31a3dd5943bf1c8cfc48e7bfb08",
+      "type": "reference"
+    },
+    {
+      "id": "scripts_dependency_health_py",
+      "path": "scripts/dependency_health.py",
+      "sha256": "d1288658ed9ad81e2dd36b9c7cb2cf96010a9eeed41887a788cbff0ff64eae93",
+      "type": "script"
+    },
+    {
+      "id": "scripts_evolve_py",
+      "path": "scripts/evolve.py",
+      "sha256": "5f35ea818449d0dd51f7d6d0359897659425cc4f2a8dcb66fe6a83540e3a2cb5",
+      "type": "script"
+    },
+    {
+      "id": "scripts_review_staleness_py",
+      "path": "scripts/review_staleness.py",
+      "sha256": "706b04f17a6936305017fa94da3840eeb2012fcca661ee6dca11c0089035dab1",
+      "type": "script"
+    },
+    {
+      "id": "scripts_run_evals_py",
+      "path": "scripts/run_evals.py",
+      "sha256": "7a2776a33d1c90e76bb1571413ce4996fc1938775509c4215aaa1fe7409c9202",
+      "type": "script"
+    },
+    {
+      "id": "pipeline",
+      "path": "scripts/run_pipeline.py",
+      "sha256": "e25ca81406aa704a9737c35652ffe6f80b1ec9bb304b589b3db9085ec1d7f35d",
+      "type": "script"
+    },
+    {
+      "id": "scripts_schema_drift_py",
+      "path": "scripts/schema_drift.py",
+      "sha256": "67be6d6f552473703e3ad61adcf700ff497855d2205df41a46cbe86967591deb",
+      "type": "script"
+    },
+    {
+      "id": "scripts_skill_document_py",
+      "path": "scripts/skill_document.py",
+      "sha256": "ec86981b75ea29263c9e71295f284067096754bbc4b294e7f2e11560830e61b5",
+      "type": "script"
+    },
+    {
+      "id": "scripts_staleness_check_py",
+      "path": "scripts/staleness_check.py",
+      "sha256": "b3be7f9e4832d42d301a82395dba08383cf417535e8e42c2e2f73b6ea98a192b",
+      "type": "script"
+    },
+    {
+      "id": "scripts_success_ledger_py",
+      "path": "scripts/success_ledger.py",
+      "sha256": "f0eee7d0deac4dca979c325ff3920231cdc6ad0a1263b5d801dd93c0e47b036f",
+      "type": "script"
+    }
+  ],
+  "constraints": [
+    {
+      "id": "every_expected_is_reachable",
+      "severity": "error"
+    },
+    {
+      "id": "deterministic_multistep_has_orchestrator",
+      "severity": "error"
+    },
+    {
+      "id": "semantic_recon_contracts_ready",
+      "severity": "error"
+    }
+  ],
+  "edges": [
+    {
+      "from": "board_status_input",
+      "relation": "consumed_by",
+      "to": "pipeline"
+    },
+    {
+      "from": "diagnostics_input",
+      "relation": "consumed_by",
+      "to": "pipeline"
+    },
+    {
+      "from": "pipeline",
+      "relation": "compared_against",
+      "to": "board_status_expected"
+    },
+    {
+      "from": "pipeline",
+      "relation": "compared_against",
+      "to": "diagnostics_expected"
+    },
+    {
+      "from": "remote_401_input",
+      "relation": "consumed_by",
+      "to": "pipeline"
+    }
+  ],
+  "gates": [
+    {
+      "id": "spec",
+      "inputs": [
+        "skill_document",
+        "package_index"
+      ]
+    },
+    {
+      "id": "security",
+      "inputs": [
+        "package"
+      ]
+    },
+    {
+      "id": "pipeline",
+      "inputs": [
+        "scripts",
+        "dependency_manifests"
+      ]
+    },
+    {
+      "id": "eval_schema",
+      "inputs": [
+        "eval_specs",
+        "golden_cases",
+        "eval_runner"
+      ]
+    }
+  ],
+  "schema_version": 1,
+  "semantic_recon": {
+    "reasons": [],
+    "sources": [
+      {
+        "contract_id": "amux_api",
+        "contract_path": "/vol1/1000/docker/nec8-docker/amux/.opencode/skills/amux-skill/contracts/data_contract_amux_api",
+        "id": "amux-http-api",
+        "impact": "high",
+        "reuse": "recurring",
+        "type": "api"
+      }
+    ],
+    "status": "REQUIRED"
+  },
+  "skill": "amux-skill",
+  "workflow": {
+    "kind": "deterministic"
+  }
+}

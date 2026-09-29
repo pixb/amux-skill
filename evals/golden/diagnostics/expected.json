@@ -1,0 +1,15 @@
+{
+  "board_auth": "skipped",
+  "build": "407b819f10569af5",
+  "checked_at": "2026-09-29T11:08:01Z",
+  "commit": "unknown",
+  "errors": [],
+  "health_http": 200,
+  "health_status": "ok",
+  "reachable": true,
+  "scenario": "Is the amux realtime backbone healthy? Check the diagnostics endpoints and read measured before the number.",
+  "skill": "amux",
+  "store": "ok",
+  "token_present": false,
+  "url": "https://localhost:8824"
+}

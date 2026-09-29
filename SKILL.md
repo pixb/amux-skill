@@ -1,0 +1,313 @@
+---
+name: amux-skill
+description: Use when the user mentions amux, the AMUX-* kanban board, board cards or gates, amux projects or project tasks, amux workers/sessions, schedules, memory or notes, Telegram routing, browser automation, CRM, or debugging the amux server/API — talks to the amux HTTP API with curl using $AMUX_URL and $AMUX_AUTH_TOKEN.
+license: MIT + Commons Clause
+activation: /amux
+metadata:
+  author: amux
+  version: 1.0.0
+  created: 2026-09-29
+  last_reviewed: 2026-09-29
+  review_interval_days: 90
+  dependencies:
+    - name: amux HTTP API
+      url: https://localhost:8824
+      type: service
+      tls_verify: false
+  schema_expectations:
+    - url: https://localhost:8824/health
+      method: GET
+      tls_verify: false
+      expected_keys:
+        - status
+        - build
+        - commit
+        - store
+        - board
+provenance:
+  maintainer: amux
+  version: 1.0.0
+  created: 2026-09-29
+  source_references: []
+---
+
+# amux — HTTP API client
+
+amux is a local/LAN agent-orchestration service (board + workers + schedules +
+memory + a pile of small APIs). Every interaction is HTTPS JSON: `curl -sk` +
+Bearer token. **There is no MCP server — do not go looking for one.**
+
+Long-tail families (email, Gmail, calendar, Telegram, browser, CRM, journal,
+files/fs, org, groups, torrents, graph, map, SQL, dictation, TTS, habits,
+review, connectors): Read `references/long-tail.md` for one verified example
+per route — confirm the route on `GET /api/debug/routes` first.
+
+## 0. Prerequisites: environment variables
+
+```bash
+export AMUX_URL=https://<amux-host-ip>:8824   # self-signed cert, port 8824
+export AMUX_AUTH_TOKEN=<api token configured on the amux server>
+```
+
+- Only `/health` and `/` skip the token; **every other `/api/*` route requires**
+  `Authorization: Bearer $AMUX_AUTH_TOKEN`.
+- No token → `401 {"error":"unauthorized","reason":"missing_credential"}`;
+  wrong token → `401 invalid_bearer` (most common cause: the server's token
+  changed without a `docker compose restart`).
+- If either variable is unset, ask the user. Never guess, never print the token.
+- Certificate is self-signed: every curl needs `-sk`.
+
+## 1. Standard call templates
+
+```bash
+# read
+curl -sk -H "Authorization: Bearer $AMUX_AUTH_TOKEN" "$AMUX_URL/api/board"
+
+# write (JSON body)
+curl -sk -X POST \
+  -H "Authorization: Bearer $AMUX_AUTH_TOKEN" \
+  -H 'Content-Type: application/json' \
+  -H "X-Amux-Worker: ${AMUX_WORKER:-opencode}" \
+  -d '{"title":"...","type":"code"}' "$AMUX_URL/api/board"
+```
+
+- `X-Amux-Worker` attributes the write in the server log (optional, but it makes
+  diagnostics easier). **Exception: the operator-only project routes reject
+  requests that carry it** — see §7.
+- Failure triage: 401 → token problem; 409 `gate_blocked` → §2 gates;
+  404 → read the real route table with `GET /api/debug/routes` (the table wins
+  over any written doc).
+
+## 2. Board (cards)
+
+```bash
+# list / one card / create / delete
+curl -sk -H "Authorization: Bearer $AMUX_AUTH_TOKEN" "$AMUX_URL/api/board"
+curl -sk -H "Authorization: Bearer $AMUX_AUTH_TOKEN" "$AMUX_URL/api/board/AMUX-1"
+curl -sk -X POST -H "Authorization: Bearer $AMUX_AUTH_TOKEN" -H 'Content-Type: application/json' \
+  -d '{"title":"Fix the login error copy","type":"code","desc":"..."}' "$AMUX_URL/api/board"
+curl -sk -X DELETE -H "Authorization: Bearer $AMUX_AUTH_TOKEN" "$AMUX_URL/api/board/AMUX-1"
+
+# claim (atomic — keeps two workers from grabbing the same card)
+curl -sk -X POST -H "Authorization: Bearer $AMUX_AUTH_TOKEN" -H 'Content-Type: application/json' \
+  -d '{"session":"my-worker"}' "$AMUX_URL/api/board/AMUX-1/claim"
+```
+
+Status flow: `backlog` → `todo` → `doing` → `done` (`done ≠ verified` — they are
+two separate gates).
+
+**Gates.** Advancing status on gated types (`code` and most others) is
+intercepted. **That is not a failure, it is a request to confirm:**
+
+```json
+{"blocked":true,"error":"gate not acknowledged",
+ "gate":["Scope & acceptance criteria are clear","No blocking dependency","Has an owner"],
+ "cli":"amux board doing AMUX-5 --checked \"Scope & acceptance criteria are clear\" ..."}
+```
+
+- Follow the response's `cli` field, or just PATCH with
+  `{"status":"doing","gate_ack":true}` (acknowledges the whole gate — simplest).
+- **Fix the type first if the type is wrong** (gates are derived from `type`);
+  do not acknowledge criteria that did not happen.
+
+**`done` requires evidence** — `gate_ack` alone is not enough:
+
+```bash
+curl -sk -X PATCH -H "Authorization: Bearer $AMUX_AUTH_TOKEN" -H 'Content-Type: application/json' \
+  -d '{"status":"done","source_ref":"<commit sha | URL | file path | PR number>"}' \
+  "$AMUX_URL/api/board/AMUX-1"
+```
+
+No artifact? Write `"source_ref":"none: <reason>"` (it is recorded and counted,
+not a bypass).
+Gate details: `GET /api/board/contract?card=AMUX-1`.
+
+## 3. Workers / Sessions
+
+```bash
+curl -sk -H "Authorization: Bearer $AMUX_AUTH_TOKEN" "$AMUX_URL/api/workers"           # list
+curl -sk -H "Authorization: Bearer $AMUX_AUTH_TOKEN" "$AMUX_URL/api/workers/WORKER_ID" # one
+curl -sk -X POST -H "Authorization: Bearer $AMUX_AUTH_TOKEN" "$AMUX_URL/api/workers/WORKER_ID/start"
+curl -sk -X POST -H "Authorization: Bearer $AMUX_AUTH_TOKEN" "$AMUX_URL/api/workers/WORKER_ID/stop"
+curl -sk -X POST -H "Authorization: Bearer $AMUX_AUTH_TOKEN" -H 'Content-Type: application/json' \
+  -d '{"text":"continue with the next step"}' "$AMUX_URL/api/workers/WORKER_ID/send"   # inject into a live session
+curl -sk -H "Authorization: Bearer $AMUX_AUTH_TOKEN" "$AMUX_URL/api/workers/WORKER_ID/peek"
+```
+
+`/api/sessions/*` is the legacy spelling of the same shapes (`send`/`peek`/
+`list`); new code uses `/api/workers/*`. More worker verbs (pause/resume/keys/
+steer/git sub-resources/dead-letters) are documented in `references/long-tail.md`.
+
+`sessions send` injects input into a **real running agent session** — use it
+deliberately, never as a smoke test.
+
+## 4. Memory / Notes
+
+```bash
+# per-session memory (read-modify-write: read first — set overwrites)
+curl -sk -H "Authorization: Bearer $AMUX_AUTH_TOKEN" "$AMUX_URL/api/sessions/NAME/memory"
+curl -sk -X POST -H "Authorization: Bearer $AMUX_AUTH_TOKEN" -H 'Content-Type: application/json' \
+  -d '{"content":"# Notes\n..."}' "$AMUX_URL/api/sessions/NAME/memory"
+
+# global memory
+curl -sk -H "Authorization: Bearer $AMUX_AUTH_TOKEN" "$AMUX_URL/api/memory/global"
+
+# notes/documents are the `memories` primitive (**there is no /api/notes route — do not use it**)
+curl -sk -H "Authorization: Bearer $AMUX_AUTH_TOKEN" "$AMUX_URL/api/memories"
+curl -sk -X POST -H "Authorization: Bearer $AMUX_AUTH_TOKEN" -H 'Content-Type: application/json' \
+  -d '{"scope":{"level":"global"},"name":"runbook","content":"# ...","memory_type":"reference"}' \
+  "$AMUX_URL/api/memories"
+curl -sk -X PATCH -H "Authorization: Bearer $AMUX_AUTH_TOKEN" -H 'Content-Type: application/json' \
+  -d '{"content":"updated body"}' "$AMUX_URL/api/memories/MEMORY_ID"
+curl -sk -X DELETE -H "Authorization: Bearer $AMUX_AUTH_TOKEN" "$AMUX_URL/api/memories/MEMORY_ID"
+```
+
+`memory_type`: `reference` (documents/runbooks), also `project`, `user`,
+`feedback`. Scope can be `global`, `group`, or `worker`.
+
+## 5. Schedules (recurring / one-shot)
+
+```bash
+curl -sk -H "Authorization: Bearer $AMUX_AUTH_TOKEN" "$AMUX_URL/api/schedules"
+curl -sk -X POST -H "Authorization: Bearer $AMUX_AUTH_TOKEN" -H 'Content-Type: application/json' \
+  -d '{"title":"Daily check","session":"lane-x","command":"check the pipeline and post a summary to the board",
+       "kind":"tmux","sched_type":"recurring","schedule_expr":"0 9 * * 1"}' \
+  "$AMUX_URL/api/schedules"
+curl -sk -X POST -H "Authorization: Bearer $AMUX_AUTH_TOKEN" "$AMUX_URL/api/schedules/RUN_ID/run"  # run now
+curl -sk -H "Authorization: Bearer $AMUX_AUTH_TOKEN" "$AMUX_URL/api/schedules/runs"               # recent runs
+curl -sk -X PATCH -H "Authorization: Bearer $AMUX_AUTH_TOKEN" -H 'Content-Type: application/json' \
+  -d '{"enabled":0}' "$AMUX_URL/api/schedules/RUN_ID"
+```
+
+Fields: `once` uses `run_at` (ISO), `recurring` uses `schedule_expr`
+(5-field cron). `watch`, `watch_timeout`, `done_pattern`, `done_action`,
+`trigger_on`, `trigger_sessions` are **refused with 400** on this server — they
+were never ported; see `references/long-tail.md`.
+
+## 6. Diagnostics (check these before grepping logs)
+
+| Endpoint | Use |
+|---|---|
+| `GET /health` | liveness, build/commit, store (**token-free**, use this to probe) |
+| `GET /api/health/invariants` | invariants currently failing |
+| `GET /api/logs/analyze?since_h=24` | error groups + verdicts |
+| `GET /api/logs/stats?since_h=24` | traffic/latency |
+| `GET /api/debug/routes` | **the live route table — check this before assuming a route exists** |
+| `GET /api/debug/sse?since_h=24` | has realtime degraded to polling |
+| `GET /api/debug/tmux` | session discovery as the server sees it |
+| `GET /api/system-jobs` | are the background loops running |
+
+**Read `measured` before the number**: `total_errors: 0, measured: false` means
+"not measured", not "no errors". `n_considered` is the other half — it says how
+big the population behind the number was, and a 0 there means the probe never
+saw a row. Grep server logs on the host with `-a` — one NUL byte makes grep
+treat the whole file as binary and silently drop matches.
+
+## 7. Projects (project → tasks)
+
+A project is a task container (board cards carrying `project_group`). You submit
+an **outcome**; the server's intake decomposes it asynchronously into cards,
+which the project's dedicated worker then executes.
+
+```bash
+# list / one project's board (tasks, commands, acceptance state)
+curl -sk -H "Authorization: Bearer $AMUX_AUTH_TOKEN" "$AMUX_URL/api/projects"
+curl -sk -H "Authorization: Bearer $AMUX_AUTH_TOKEN" "$AMUX_URL/api/projects/<name>"
+
+# create (expect_rev:0 = creation; initial_command submits the first outcome too)
+curl -sk -X PUT -H "Authorization: Bearer $AMUX_AUTH_TOKEN" -H 'Content-Type: application/json' \
+  -d '{"expect_rev":0,
+       "policy":{"repository":"/abs/path/to/repo",
+                 "coordinator":{"provider":"claude","model":"<model>"},
+                 "executor":{"provider":"codex","model":"<model>"},
+                 "verify_command":"<a command that runs in the repo>"},
+       "initial_command":{"idempotency_key":"<uuid>","text":"Build <outcome> and hand over evidence"}}' \
+  "$AMUX_URL/api/projects/<name>"
+
+# add another outcome to an existing project → 202, decomposed asynchronously
+curl -sk -X POST -H "Authorization: Bearer $AMUX_AUTH_TOKEN" -H 'Content-Type: application/json' \
+  -d '{"idempotency_key":"<uuid>","text":"add one more outcome"}' "$AMUX_URL/api/projects/<name>/commands"
+
+# task side / acceptance / migration
+# POST /api/projects/<name>/tasks/<id>/{report,wait,retry,required-outputs}
+# POST /api/projects/<name>/acceptance/{approve,rerun}
+# POST /api/projects/<name>/migration/{preview,apply,rollback}
+```
+
+- **Operator-only writes**: `PUT /api/projects/<name>` (create/reconfigure) and
+  `POST /api/projects/draft` require the request to carry **no `X-Amux-Worker`
+  header**; with it you get `403 operator setting`. The §1 template adds that
+  header by default — **drop that line** for these two calls.
+- `expect_rev:0` is creation only. To change an existing project, `GET` its
+  current `revision` and send it back; mismatch → 409.
+- `commands` is **async intake**: it answers `202 {id, state:"accepted"}` and
+  the tasks appear later — "no tasks yet" is not a failure. Poll
+  `GET /api/projects/<name>` (the board list has **no** `?project=` filter).
+- Project tasks are ordinary cards (`project_group` field), so §2's status
+  flow, gates and `done`-needs-evidence rules apply unchanged.
+
+## 8. Which family (routing table)
+
+| Need | Use |
+|---|---|
+| Tasks / action items | `/api/board` |
+| Create a project / submit an outcome | `/api/projects` (operator-only, §7) |
+| People / contacts | `amux crm` (on the server) or `/api/crm/contacts` |
+| Documents / reference | `/api/memories` (`memory_type: reference`) |
+| Recurring automation | `/api/schedules` |
+| Message a session | `/api/workers/{id}/send` |
+| Telegram in/out | `/api/telegram/status`, `/api/telegram/send` |
+| Browser automation | `/api/browser/start` → `state` → `action` (send `X-Amux-Session`) |
+| Everything else | see `references/long-tail.md`: email, Gmail, calendar, journal, files vs fs, org, groups, torrents, graph, map, SQL, dictation, TTS, habits, review, connectors, ollama — and confirm on `GET /api/debug/routes` first |
+
+## 9. Remote hosts
+
+- **The `amux` CLI does not send an Authorization header** (it assumes a
+  localhost straight-through), so it 401s from any remote host. Use this
+  skill's curl form remotely; on the amux server itself you may use
+  `docker exec amux amux board ls` (localhost inside the container skips the
+  token).
+- `AMUX_AUTH_TOKEN` is read once at startup — changing it requires
+  `docker compose restart`.
+- Self-signed cert: curl needs `-sk`; a browser needs to accept the warning once.
+
+## 10. Security
+
+- Read the token only from the environment; never write it to a file, echo it,
+  or commit it.
+- Say what a write will do (create/delete a card, send a message, trigger a
+  schedule) before executing it.
+- Port 8824 is reachable on the LAN and the token is the only gate — never paste
+  it into chat, logs, or code.
+
+## Gotchas (environment facts — do not assume otherwise)
+
+- **Token boundary**: only `/health` and `/` are token-free; every `/api/*`
+  needs one. Probe liveness against `/health`, never `/api/*` (a 401 there does
+  not mean the server is down).
+- **The two 401s are different**: `missing_credential` = no token sent;
+  `invalid_bearer` = wrong token — most often the server's `AMUX_AUTH_TOKEN`
+  changed without a restart (it is read once at startup).
+- **The `amux` CLI sends no Authorization header**, so any `amux ...` command on
+  a remote host ends in a 401 traceback. That is a client limitation, not a
+  dead server — use this skill's curl form.
+- **A 409 on a status change is not a failure**: `gate not acknowledged` is the
+  gate asking for confirmation, and the response's `cli` field is the retry
+  command. If the type is wrong, fix the type first; never acknowledge criteria
+  that did not happen.
+- **`done` needs evidence**: `gate_ack` cannot move `done`; it needs
+  `source_ref` (commit/URL/path/PR number). No artifact → `none: <reason>`.
+- **Operator project writes reject `X-Amux-Worker`**: creating/configuring a
+  project or calling `/projects/draft` with that header is a 403 (operator =
+  no worker header + global scope) — the exact opposite of the "always attribute
+  your writes" habit in §1.
+- **Project intake is async**: `POST /api/projects/<name>/commands` returning
+  202 only means the outcome was received; the server decomposes it into tasks
+  afterwards. Not seeing tasks immediately is not a failure — poll
+  `GET /api/projects/<name>`.
+- **Docs may run ahead of the deployment**: on a 404, read
+  `GET /api/debug/routes` before concluding anything.
+- **Read `measured` before trusting a diagnostic number**: `total_errors: 0,
+  measured: false` is an unrun probe.
+- **Grep server logs with `-a`**: one NUL byte makes grep treat the file as
+  binary and silently print no matches (while `grep -c` keeps counting).

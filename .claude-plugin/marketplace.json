@@ -1,0 +1,14 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "amux-skill",
+  "owner": {
+    "name": "amux"
+  },
+  "plugins": [
+    {
+      "name": "amux-skill",
+      "source": "./",
+      "description": "Use when the user mentions amux, the AMUX-* kanban board, board cards or gates, amux projects or project tasks, amux workers/sessions, schedules, memory or notes, Telegram routing, browser automation, CRM, or debugging the amux server/API — talks to the amux HTTP API with curl using $AMUX_URL and $AMUX_AUTH_TOKEN."
+    }
+  ]
+}
