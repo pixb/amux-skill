@@ -13,33 +13,39 @@
       "type": "package_file"
     },
     {
+      "id": "gitignore",
+      "path": ".gitignore",
+      "sha256": "862263fa1f46c20f0d1e4dac5ffcc75abd55c08211b2c3864c5f8764b9d87793",
+      "type": "package_file"
+    },
+    {
       "id": "agents_document",
       "path": "AGENTS.md",
-      "sha256": "ce4cf038b04a190cc7933b9d5fab66c4733aa462c9a306033e49eb12f1667a10",
+      "sha256": "4dda5b5b4d950356e719b1e1a155488f4c5ccb99a5f544c6b9d46dae6d766984",
       "type": "companion_instruction"
     },
     {
       "id": "evolution_md",
       "path": "EVOLUTION.md",
-      "sha256": "23b7132711472cd60fe65775721d8a69feea450b768fc824b6e8409992840beb",
+      "sha256": "50935f48f548cc11056c72ff11d22a961a4f370081698ca64112921ec65f4b8c",
       "type": "package_file"
     },
     {
       "id": "readme_md",
       "path": "README.md",
-      "sha256": "1bc7e6c601454733ad46d9bc96ee345883da63016b664cd38ec2c3e4c457e0e0",
+      "sha256": "1775cfd25d195fcd1e6cd3e672dbea19c74ca088ad41ee56b51ef682a9352901",
       "type": "package_file"
     },
     {
       "id": "skill_document",
       "path": "SKILL.md",
-      "sha256": "3602cfc91ca4fb1b865e2fea424865bb3a6d974bf8230e3fd70e32b2ccc9bfc1",
+      "sha256": "b94023ce9ff161d22d31dea1075081bad8ed742767b10939665fffb977733465",
       "type": "instruction"
     },
     {
       "id": "verification_md",
       "path": "VERIFICATION.md",
-      "sha256": "82bc757d78226ec0b976289f60cfd607e50492e62f12cf01ae0a7cad5ace62a6",
+      "sha256": "0dc72ac07a82ee04b9404defce6b3006b7a25a51a90430bb5f4bd83c8412a107",
       "type": "package_file"
     },
     {

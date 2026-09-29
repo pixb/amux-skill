@@ -28,7 +28,11 @@ export AMUX_AUTH_TOKEN=<api token>
 curl -sk -H "Authorization: Bearer $AMUX_AUTH_TOKEN" "$AMUX_URL/api/board"
 ```
 
-- Only `/health` and `/` skip the token; every `/api/*` route requires it.
+- Every `/api/*` call needs `Authorization: Bearer $AMUX_AUTH_TOKEN`; a
+  measured probe set needs none — `/health`, `/`, `/api/debug/*`,
+  `/api/health/invariants`, `/api/system-jobs`, `/manifest.json`,
+  `/api/calendar.ics` (full measured list in SKILL.md's "Token boundary"
+  Gotcha).
 - Confirm with the user before write calls (create/update/delete cards,
   send messages, trigger schedules).
 - `PUT /api/projects/<name>` and `POST /api/projects/draft` are operator-only:

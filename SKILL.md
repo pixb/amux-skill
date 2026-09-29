@@ -7,7 +7,7 @@ metadata:
   author: amux
   version: 1.0.0
   created: 2026-09-29
-  last_reviewed: 2026-09-29
+  last_reviewed: 2026-09-30
   review_interval_days: 90
   dependencies:
     - name: amux HTTP API
@@ -49,8 +49,10 @@ export AMUX_URL=https://<amux-host-ip>:8824   # self-signed cert, port 8824
 export AMUX_AUTH_TOKEN=<api token configured on the amux server>
 ```
 
-- Only `/health` and `/` skip the token; **every other `/api/*` route requires**
-  `Authorization: Bearer $AMUX_AUTH_TOKEN`.
+- **Send `Authorization: Bearer $AMUX_AUTH_TOKEN` on every `/api/*` call.** A
+  measured handful of probe/diagnostic routes skip it (exact list in the
+  "Token boundary" Gotcha); `/health` and `/` are the two you should actually
+  probe with.
 - No token → `401 {"error":"unauthorized","reason":"missing_credential"}`;
   wrong token → `401 invalid_bearer` (most common cause: the server's token
   changed without a `docker compose restart`).
@@ -197,6 +199,11 @@ were never ported; see `references/long-tail.md`.
 | `GET /api/debug/tmux` | session discovery as the server sees it |
 | `GET /api/system-jobs` | are the background loops running |
 
+**Token-free for probing** (measured 2026-09-30): `/health`, `/`, the four
+`/api/debug/*` rows above, `/api/health/invariants`, `/api/system-jobs`,
+`/manifest.json`, `/api/calendar.ics`. Everything else in this table needs the
+Bearer (§0).
+
 **Read `measured` before the number**: `total_errors: 0, measured: false` means
 "not measured", not "no errors". `n_considered` is the other half — it says how
 big the population behind the number was, and a 0 there means the probe never
@@ -245,6 +252,25 @@ curl -sk -X POST -H "Authorization: Bearer $AMUX_AUTH_TOKEN" -H 'Content-Type: a
   `GET /api/projects/<name>` (the board list has **no** `?project=` filter).
 - Project tasks are ordinary cards (`project_group` field), so §2's status
   flow, gates and `done`-needs-evidence rules apply unchanged.
+- **The deployed binary may predate this doc**: `GET /api/projects` 404 (or a
+  route table with no `/api/projects`) is not your call being wrong — check
+  which binary is live first. `/health` cannot tell you: prebuilt images carry
+  no build stamp, so it reports `commit: "unknown"` (measured on both the old
+  and the rebuilt image, 2026-09-30). Read the route-table fingerprint instead:
+
+  ```bash
+  curl -sk "$AMUX_URL/api/debug/routes" | python3 -c '
+  import json,sys; d=json.load(sys.stdin)
+  print(d["count"], sum(1 for r in d["routes"] if r["path"].startswith("/api/projects")))'
+  # current (serves /api/projects):        478 16
+  # pre-projects build (7b84f923):         422 0
+  ```
+
+  Why it happens: `ghcr.io/mixpeek/amux:latest` only advances when the `rust`
+  workflow is green — a red run leaves `deploy-cloud.yml` skipped and the
+  digest frozen (`sha256:902448decf09…` = build `7b84f923`, 2026-09-23, still
+  being served days later while origin/main moved on), so the container serves
+  stale code with nothing in `/health` saying so.
 
 ## 8. Which family (routing table)
 
@@ -277,14 +303,20 @@ curl -sk -X POST -H "Authorization: Bearer $AMUX_AUTH_TOKEN" -H 'Content-Type: a
   or commit it.
 - Say what a write will do (create/delete a card, send a message, trigger a
   schedule) before executing it.
-- Port 8824 is reachable on the LAN and the token is the only gate — never paste
-  it into chat, logs, or code.
+- Port 8824 is reachable on the LAN and the token is the only gate on data
+  routes — never paste it into chat, logs, or code. The diagnostic routes (§6)
+  answer **without** it, so do not expose 8824 past the LAN.
 
 ## Gotchas (environment facts — do not assume otherwise)
 
-- **Token boundary**: only `/health` and `/` are token-free; every `/api/*`
-  needs one. Probe liveness against `/health`, never `/api/*` (a 401 there does
-  not mean the server is down).
+- **Token boundary** (measured 2026-09-30, no `Authorization` header):
+  token-free = `/health`, `/`, `/api/debug/{routes,invariants,tmux,sse}`,
+  `/api/health/invariants`, `/api/system-jobs`, `/manifest.json`,
+  `/api/calendar.ics`; `401 missing_credential` = `/api/{board,projects,workers,
+  schedules,memories,groups,sessions,logs/*}` and, by the same rule, every
+  other `/api/*`. The older wording "only `/health` and `/`" was wrong — but
+  keep probing liveness against `/health`, and never read a 401 as "the server
+  is down".
 - **The two 401s are different**: `missing_credential` = no token sent;
   `invalid_bearer` = wrong token — most often the server's `AMUX_AUTH_TOKEN`
   changed without a restart (it is read once at startup).
@@ -305,8 +337,14 @@ curl -sk -X POST -H "Authorization: Bearer $AMUX_AUTH_TOKEN" -H 'Content-Type: a
   202 only means the outcome was received; the server decomposes it into tasks
   afterwards. Not seeing tasks immediately is not a failure — poll
   `GET /api/projects/<name>`.
-- **Docs may run ahead of the deployment**: on a 404, read
-  `GET /api/debug/routes` before concluding anything.
+- **Docs may run ahead of the deployment, and `/health` cannot tell you**: on a
+  404 (or a route the table does not list), read `GET /api/debug/routes` —
+  use the §7 fingerprint, since prebuilt images report `commit: "unknown"`.
+- **This skill's own directory can be replaced out from under you**: cloning
+  over an existing checkout swaps the gitdir link and silently drops every
+  uncommitted edit (cost 2026-09-29: a Gotcha, a §7 bullet and two EVOLUTION
+  entries). Before cloning over it or replacing the directory: `git -C <dir>
+  status --porcelain` empty **and** pushed.
 - **Read `measured` before trusting a diagnostic number**: `total_errors: 0,
   measured: false` is an unrun probe.
 - **Grep server logs with `-a`**: one NUL byte makes grep treat the file as

@@ -23,8 +23,10 @@ export AMUX_AUTH_TOKEN=<api token>           # every /api/* route needs it
 ```
 
 `AMUX_AUTH_TOKEN` must match the token the server was started with; a token
-change on the server requires a server restart to take effect. `GET /health`
-and `GET /` are the only token-free routes, which is what the probe below uses.
+change on the server requires a server restart to take effect. The probe below
+uses `GET /health`, which is token-free (as are `/` and the `/api/debug/*`
+diagnostic routes — SKILL.md's "Token boundary" Gotcha has the full measured
+list).
 
 ### 2. Network
 

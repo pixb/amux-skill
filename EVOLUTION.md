@@ -103,3 +103,66 @@ as a `## <timestamp> — run_evals ... FAILED` entry with its raw failing checks
   out); `evolve.py` all checks fresh and green; VERIFICATION.md regenerated
   `clean: true` (fingerprint `67c4f4651fc8b550abeb08a8a7618049dc4d9294653d0fc5afcd3fcbc7669cf8`);
   install.sh `--dry-run` resolves target dir `amux-skill`; CJK sweep 0 hits.
+
+## 2026-09-29T17:14:44Z — recovery: a clone overwrote the directory and took uncommitted work with it
+
+- trigger: on 2026-09-29 this skill's directory was replaced in place by a fresh
+  clone of `git@github.com:pixb/amux-skill.git` (outer reflog shows only
+  `clone: from ...`; HEAD became `21e1f5f "chore: add all."`). The clone swapped
+  the `gitdir:` link and the working tree, so everything written since the last
+  inner push disappeared without a status line, a warning, or an error.
+- lost: the "stale binary" Gotcha, the §7 deployment bullet, and the
+  `2026-09-29T13:15:32Z` EVOLUTION entry recording them; VERIFICATION.md fell
+  back to fingerprint `67c4f465…`. `grep -rl 'stale binary' .opencode` returned
+  nothing and `git log -S` inside the new clone found nothing — the bytes existed
+  only in the session that had written them.
+- recovery: rewritten from the session record, with the facts corrected while
+  rewriting (see the next entry): the projects family entered origin/main at
+  `2fff84bd` (2026-09-23 19:00 -0400), not 2026-09-20, and both pre-projects
+  builds measured `422/0`, so "before 2026-09-20" was never the right bound.
+- guard: SKILL.md now carries the Gotcha "This skill's own directory can be
+  replaced out from under you" — before any clone-over or directory replace,
+  `git -C <dir> status --porcelain` must be empty **and** the inner repo pushed.
+  The outer `git status` cannot help: while the gitdir link points at the old
+  submodule metadata the outer repo reports a gitlink, and after the swap it
+  reports the new one — neither reveals uncommitted files inside.
+
+## 2026-09-29T17:14:44Z — corrections: token boundary (measured), deployment identity (route fingerprint)
+
+Probes run 2026-09-30 local (2026-09-29T17:0xZ), no `Authorization` header,
+against the freshly rebuilt container.
+
+- wrong claim, four places (`SKILL.md` §0 + Gotchas, `AGENTS.md`, `README.md`):
+  "only `/health` and `/` are token-free; every `/api/*` route requires one" is
+  false. Measured 200 without a token: `/health`, `/`,
+  `/api/debug/{routes,invariants,tmux,sse}`, `/api/health/invariants`,
+  `/api/system-jobs`, `/manifest.json`, `/api/calendar.ics`. Measured 401
+  `missing_credential`: `/api/{board,projects,workers,schedules,memories,groups,
+  sessions,logs/*}`. The safe instruction is unchanged — send the Bearer by
+  default, probe liveness on `/health` — but the boundary itself is now stated
+  as measured, and §10 notes that the diagnostic routes (including
+  `/api/debug/tmux` session discovery) answer unauthenticated, so 8824 must not
+  be exposed past the LAN.
+- second-order fix: the scanner's exfiltration pattern matches any verb from
+  `send|post|upload|transmit|forward` within 60 chars of `token|secret|...`, so
+  the first rewrite ("Send the Bearer … token-free exceptions") tripped HIGH at
+  `AGENTS.md:31`. Rewritten as "Every `/api/*` call needs …; a measured probe
+  set needs none" — no verb, same meaning. Worth knowing before the next edit.
+- deployment identity: `/health` reports `commit: "unknown"` on **both** the old
+  and the rebuilt image (prebuilt images carry no build stamp), so `/health`
+  cannot answer "which binary is this?". Fall back to the route-table
+  fingerprint in §7: `count` + routes under `/api/projects` → `478 16` current,
+  `422 0` pre-projects (build `7b84f923`).
+- why the deployment was stale: the `rust` workflow for `163ec1fc`
+  (run `36504270496`) failed — SPA static gate across all four e2e shards plus
+  cargo nextest shards 1/2/5 — so `deploy-cloud.yml` skipped entirely and GHCR
+  `:latest` stayed at digest `sha256:902448decf09…` (built 2026-09-23 from
+  `7b84f923`) while origin/main moved ahead. Image rebuilt locally from
+  origin/main and verified: routes `count=478`, `/api/projects` → 401 (was 404).
+- evidence: `validate.py` VALID (0 warnings); `security_scan.py` CLEAN;
+  `skill_graph.py run --cache <fresh>` spec/security/pipeline/eval_schema all
+  PASS; `run_evals.py` 24/24 (default), `--validate` VALID, `--rollout` 24/24
+  with `remote-401` held out; `evolve.py` all checks fresh and green;
+  VERIFICATION.md regenerated `clean: true`, fingerprint
+  `583702805f78e6f641628f9cee3620f78dd03e9c542d2a887b615988f902a58d`;
+  CJK sweep 0 hits; token/LAN-IP sweep 0 hits.
