@@ -235,17 +235,21 @@ an **outcome**; the server's intake decomposes it asynchronously into cards,
 which the project's dedicated worker then executes.
 
 **Which project?** amux has no repo→project registry — the local-project →
-amux-project name mapping is YOUR integration config (one name per project;
-normalize it through `valid_name`: starts `[a-z0-9]`, then `[a-z0-9_-]`,
-≤48 chars — `MyRepo` → `myrepo`). Both calls below are operator calls (no
-`X-Amux-Worker` header):
+amux-project name mapping is YOUR integration config (one name per project).
+The name must PASS `valid_name`: starts `[a-z0-9]`, then `[a-z0-9_-]`,
+≤48 chars. The server never rewrites it — a violation is a hard
+`400 invalid project name`, so pick a conforming name yourself (`MyRepo` is
+rejected, not lowercased; send `myrepo`). Both calls below are operator
+calls (no `X-Amux-Worker` header):
 
 ```bash
 # discover: 200 {measured, n_considered, projects:[{name, revision, policy, ...}]}
 curl -sk -H "Authorization: Bearer $AMUX_AUTH_TOKEN" "$AMUX_URL/api/projects"
 
 # ensure-exists, idempotent: 200 = created; 409 "revision conflict:
-# expected 0, current N" = already there → treat as success, use it as-is
+# expected 0, current N" = already there → treat as success, use it as-is;
+# 400 "invalid project name" = the name fails valid_name (above) — pick
+# another name, the server does not rewrite it
 curl -sk -X PUT -H "Authorization: Bearer $AMUX_AUTH_TOKEN" -H 'Content-Type: application/json' \
   -d '{"expect_rev":0,"policy":{"repository":"/abs/path/or/placeholder",
        "coordinator":{"provider":"claude","model":"<model>"},

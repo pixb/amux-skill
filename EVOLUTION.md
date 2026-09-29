@@ -235,3 +235,27 @@ only `desc_head`/`desc_len` — plus whether create's default `status=todo`
   `--validate` VALID, `--rollout` 24/24 with `remote-401` held out;
   `evolve.py` all checks fresh and green; CJK sweep 0 hits; token/LAN-IP
   sweep 0 hits.
+
+## 2026-09-30 — correction: §7 described valid_name as normalizing; it only validates
+
+A LAN integration's first project (`pix-bbs-publish-article`) prompted a
+name-rule check. The name itself passes — `valid_name` allows 1..48 chars
+of `[a-z0-9_-]` starting with `[a-z0-9]`, and the live create returned 200
+(revision 1). The check exposed an error in §7 instead.
+
+- §7 said "normalize it through `valid_name` ... `MyRepo` → `myrepo`",
+  which reads as a server-side rewrite. It is not: `valid_name` is a pure
+  predicate, and the server never rewrites a name — a violation is a hard
+  `400 invalid project name` (both `configure` and `store::save` gate on
+  it). An integrator following the old text would send `MyRepo` expecting
+  lowercasing, get a 400, and find no skill passage explaining it.
+- §7 now states it as a validator: the name must PASS the rule, pick a
+  conforming name yourself (`MyRepo` is rejected, not lowercased), and
+  the ensure-exists recipe lists the 400 next to 200/409 with the remedy
+  (rename; no server-side rewrite).
+- evidence: `validate.py` VALID (no issues); `security_scan.py` CLEAN;
+  `skill_graph.py build` + `run --cache <fresh>` spec/security/
+  pipeline/eval_schema all PASS; `run_evals.py` 24/24 (default),
+  `--validate` VALID, `--rollout` 24/24 with `remote-401` held out;
+  `evolve.py` all checks fresh and green; CJK sweep 0 hits; token/LAN-IP
+  sweep 0 hits.
