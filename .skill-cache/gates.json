@@ -6,6 +6,12 @@
       "stderr": "",
       "stdout": "{\n  \"clean\": true,\n  \"issues\": []\n}\n"
     },
+    "137df4d4a9f707e4e01b7b38167c16e57c77637909ec8071f94b8ed56c2b6fd7": {
+      "duration_ms": 88.344,
+      "exit_code": 1,
+      "stderr": "",
+      "stdout": "{\n  \"clean\": false,\n  \"issues\": [\n    {\n      \"severity\": \"high\",\n      \"file\": \"EVOLUTION.md\",\n      \"line\": 147,\n      \"pattern\": \"Exfiltration directive\",\n      \"description\": \"Directive to transmit secrets/credentials\"\n    },\n    {\n      \"severity\": \"high\",\n      \"file\": \"EVOLUTION.md\",\n      \"line\": 148,\n      \"pattern\": \"Exfiltration directive\",\n      \"description\": \"Directive to transmit secrets/credentials\"\n    }\n  ]\n}\n"
+    },
     "3d3d74e721c032cfbd360f39e8a2ed12be90deb47fa8be30aa55c7707c635467": {
       "duration_ms": 82.52,
       "exit_code": 0,
