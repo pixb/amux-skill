@@ -101,11 +101,18 @@ two separate gates).
 **Create defaults to `status:"todo"`** — omit `status` and the card lands in
 `todo`, not `backlog`. `todo` is the *dispatch-checked* population: the
 `todo_is_reachable_by_dispatch` invariant counts managed todo cards on lanes
-with no registered worker as failures (amux `frustrations.md` AF-957), and
-lane todo WIP limits apply to them. A record lane (a project session with no
-workers) should pass `"status":"backlog"` explicitly — `backlog` is checked
-by neither. A todo filed on an isolated lane is silently stored as `backlog`
-anyway; look for the `todo_defaulted_to_backlog` log marker.
+with no registered worker as failures, and lane todo WIP limits apply to them.
+**Lanes registered as projects are exempt from that invariant** (fixed
+`78c328e3`; the pattern was amux `frustrations.md` AF-957, archived): the
+check splits `group_config`-registered lanes — plus `project:<name>` session
+shapes — out of the population *and* the denominator, fail-closed if the
+registry read fails. Its evidence carries `exempt_project_lanes: [{lane,
+todo}]` on the pass arm as well as the fail arm, and the server logs
+`marker="project_lane_dispatch_exempt"` only when the set changes. An
+*unregistered* record lane is still judged — pass `"status":"backlog"`
+explicitly there; `backlog` is checked by neither. A todo filed on an
+isolated lane is silently stored as `backlog` anyway; look for the
+`todo_defaulted_to_backlog` log marker.
 
 **Reading full text.** `GET /api/board` returns *slim* rows: `desc` is
 absent — not empty — replaced by `desc_head` + `desc_len`, and a `slim`
@@ -144,7 +151,9 @@ Gate details: `GET /api/board/contract?card=AMUX-1`.
 
 **Leases on `doing` cards (RR-0052).** Claiming or transitioning into `doing`
 grants the holder a lease: `lease_expires_at = now + AMUX_LEASE_TTL_S`
-(default 1800 s; server env, not exposed as a card field). Every 60 s a reaper
+(code default 1800 s; **this deployment runs 21600 s** since 2026-09-30 —
+probe-measured as `lease_expires_at - lease_acquired_at` on a throwaway
+card; server env, not exposed as a card field). Every 60 s a reaper
 reclaims an expired `doing` card back to `todo` — but only when it can prove
 the holder stopped: `holder_mid_turn` / `holder_child_work` renew the lease
 instead; `holder_not_running` (no live worker process) and
@@ -175,10 +184,12 @@ instead; `holder_not_running` (no live worker process) and
 **A lane with no worker process loses every lease** — its verdict is always
 `holder_not_running`, so an HTTP-driven card round-trips
 `doing → todo → doing` each TTL however active its client is (measured: two
-forced reclaims of one card within an hour; amux `frustrations.md` AF-958).
-Keep long waits in `backlog`/`todo` and move only the active sub-step into
-`doing`, or raise `AMUX_LEASE_TTL_S` server-side, or keep a real session's
-report heartbeat alive.
+forced reclaims of one card within an hour; amux `frustrations.md` AF-958,
+open — the round-trip itself, not the dispatch red it used to cause, which
+AF-957's fix removed). Keep long waits in `backlog`/`todo` and move only the
+active sub-step into `doing`, or raise `AMUX_LEASE_TTL_S` server-side (done
+here: 21600 s, so the window is 6 h rather than 30 min), or keep a real
+session's report heartbeat alive.
 
 ## 3. Workers / Sessions
 

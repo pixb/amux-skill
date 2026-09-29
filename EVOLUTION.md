@@ -339,3 +339,39 @@ answers below (read from code, measured against the live server) are now in
   `--validate` VALID, `--rollout` 24/24 with `remote-401` held out;
   `evolve.py` all checks fresh and green; CJK sweep 0 hits; token/LAN-IP
   sweep 0 hits.
+
+## 2026-09-30 — coverage + correction: project-lane dispatch exemption (AF-957 fixed) and TTL raised to 21600 s
+
+Two facts changed under the §2 status/lease text, and one measurement in the
+lease entry above went stale:
+
+- **AF-957 fixed (`amux` main `78c328e3`), entry archived with its live flip
+  as evidence.** `board.todo_is_reachable_by_dispatch` now exempts lanes
+  registered in `group_config` (plus `project:<name>` session shapes) from
+  BOTH the population and the denominator, fail-closed if the registry read
+  fails. Evidence carries `exempt_project_lanes: [{lane, todo}]` on the pass
+  arm as well as the fail arm, and the server logs
+  `marker="project_lane_dispatch_exempt"` only when the set changes.
+  §2's create-defaults paragraph now says this instead of "AF-957 counts it
+  as a failure": a **registered** project lane may hold todo cards without
+  red; an **unregistered** record lane is still judged (pass
+  `"status":"backlog"` there). Proof: identical card state before/after —
+  PBPA-1 still `todo` on `pix-bbs-publish-article` — flipped FAIL
+  (`stranded:1, total_live_todo:1`) to pass across serving build
+  `0d44280112672a05` → `bac7bf5d633d07dd`, marker fired once.
+- **TTL correction (supersedes the lease entry's "no `AMUX_LEASE_*` key …
+  runs the default"):** `server.env` now sets `AMUX_LEASE_TTL_S=21600`
+  (2026-09-30), probe-measured on a throwaway card as
+  `lease_expires_at - lease_acquired_at = 21600` exactly. §2's lease block
+  and no-worker workaround line carry the new value: the forced-reclaim
+  window is 6 h, not 30 min. The no-worker round-trip itself is still
+  AF-958, open — only the dispatch red it used to cause is gone.
+- evidence: `validate.py` "No issues found"; `security_scan.py` "No security
+  issues found"; `skill_graph.py build` + `run --cache .skill-cache/gates.json`
+  spec PASS, security PASS, pipeline/eval_schema CACHED ("skill graph OK");
+  `run_evals.py` `command checks: 24 passed, 0 failed, 0 skipped`; `evolve.py`
+  `rollout: 24 passed, 0 failed, 0 errored, 0 regressed` and "all checks fresh
+  and green"; CJK sweep 0 hits across SKILL/EVOLUTION/AGENTS/references;
+  token/LAN-IP sweep 0 hits. Server-side proof quoted in the entry body
+  (commit `78c328e3`, serving_build flip, `exempt_project_lanes` evidence,
+  marker fired once).
