@@ -259,10 +259,16 @@ curl -sk -X PUT -H "Authorization: Bearer $AMUX_AUTH_TOKEN" -H 'Content-Type: ap
 ```
 
 - Those four policy fields are the minimum. `repository` is checked for
-  absolute-path SHAPE only — a path this host cannot reach is legal while
-  `enabled` is false, and omitting `enabled` defaults it to false (the driver
-  refuses every run: `project_paused_or_disabled`). So a project can exist
-  purely as a config record on a host that never holds the code.
+  absolute-path SHAPE only — and it is resolved on the **amux server**,
+  never on client machines: other dev machines' checkouts and local paths
+  are irrelevant to amux (each machine maps its local path → project name
+  in its own integration config). A path the server cannot reach is legal
+  while `enabled` is false — the driver refuses every run before any
+  filesystem access (`project_paused_or_disabled`) — and omitting
+  `enabled` defaults it to false. So a project can exist purely as a
+  config record on a server that never holds the code; before enabling
+  execution, make sure the SERVER (its container — check the compose
+  mounts) can reach the path.
 - To EDIT an existing project: `GET` its `revision` first and send it back;
   `expect_rev:0` on an existing project is always 409, never an overwrite.
 

@@ -259,3 +259,34 @@ of `[a-z0-9_-]` starting with `[a-z0-9]`, and the live create returned 200
   `--validate` VALID, `--rollout` 24/24 with `remote-401` held out;
   `evolve.py` all checks fresh and green; CJK sweep 0 hits; token/LAN-IP
   sweep 0 hits.
+
+## 2026-09-30 — correction: "this host" in §7's repository bullet read as the client machine
+
+A LAN integration asked whether a second dev machine missing the project's
+`repository` path (`/home/pix/work/...` — a path on the FIRST dev machine)
+would cause problems. The answer is no, but §7's own wording invited the
+question: "a path **this host** cannot reach" is ambiguous about which host.
+
+- the field is server-side, full stop. Every consumer of
+  `policy.repository` lives in the amux server process:
+  `project_execution/*` (driver, checkout/worktree, acceptance git ops),
+  the publish path in `projects.rs`, and intake's `referenced_files` —
+  which touches disk but fails soft (`fs::canonicalize` error → empty
+  list, no failure). No client ever reads it; each machine maps its own
+  local checkout → project name in its own integration config.
+- while `enabled` is false the driver refuses the run BEFORE any
+  filesystem access (`project_paused_or_disabled`), so even the server
+  does not touch the path today — measured: the project was created and
+  lists normally with a path absent from server and container alike.
+- before enabling execution the requirement is that the SERVER (its
+  container — compose mounts `home/→/root`, `data/`, `server.env` only)
+  can reach the path; other machines' layouts never enter into it.
+- §7's bullet now says the path resolves on the amux server, never on
+  client machines, and names the container-mount check for the day
+  execution is turned on.
+- evidence: `validate.py` VALID (no issues); `security_scan.py` CLEAN;
+  `skill_graph.py build` + `run --cache <fresh>` spec/security/
+  pipeline/eval_schema all PASS; `run_evals.py` 24/24 (default),
+  `--validate` VALID, `--rollout` 24/24 with `remote-401` held out;
+  `evolve.py` all checks fresh and green; CJK sweep 0 hits; token/LAN-IP
+  sweep 0 hits.

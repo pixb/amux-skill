@@ -27,7 +27,7 @@
     {
       "id": "evolution_md",
       "path": "EVOLUTION.md",
-      "sha256": "a85c9f5b01e8dccd305b74478bc92c2774596e94f54dc63af488e3fe65ad4390",
+      "sha256": "998ce5ee003d54dce29ba809b81ffc322a1179dafe65cdfbc31e123711fc167e",
       "type": "package_file"
     },
     {
@@ -39,13 +39,13 @@
     {
       "id": "skill_document",
       "path": "SKILL.md",
-      "sha256": "164e105ef77dc7d331ef6f86ba8166b7f5a1477b458d5f72c3b22e8bff102f55",
+      "sha256": "13fdb9bc2fcab6b8b2264540f59c7695cb68a6d17da52f682f689f4611eff4ee",
       "type": "instruction"
     },
     {
       "id": "verification_md",
       "path": "VERIFICATION.md",
-      "sha256": "da357f8dcf176e1580b16b10f3a9451d3146f26fc22cdc6bc232fb8d4ee0f250",
+      "sha256": "25c0c9cfc2f91ada5447f4db2228dc4eb6cdcb1524fc8c916bc10ece5bc25e7a",
       "type": "package_file"
     },
     {
