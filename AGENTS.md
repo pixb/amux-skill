@@ -36,9 +36,12 @@ curl -sk -H "Authorization: Bearer $AMUX_AUTH_TOKEN" "$AMUX_URL/api/board"
 - Confirm with the user before write calls (create/update/delete cards,
   send messages, trigger schedules).
 - `PUT /api/projects/<name>` and `POST /api/projects/draft` are operator-only:
-  omit the `X-Amux-Worker` header on those two (403 if present). Project
-  outcomes are submitted via `POST /api/projects/<name>/commands` (202, async
-  intake) — tasks appear after the server decomposes them.
+  omit the `X-Amux-Worker` header on those two (403 if present). Discover or
+  create a project first (SKILL.md §7: `GET /api/projects`, idempotent
+  `PUT expect_rev:0` — 409 = already exists), then submit per your declared
+  mode: `commands` (202, async intake — needs intake models) or board cards
+  with `session:"<project>"` (the no-model `lane` mode). Do not probe modes
+  at runtime.
 - 401 → auth problem; 409 gate_blocked → follow the gate rules in SKILL.md;
   404 → check `GET /api/debug/routes` before assuming a route exists.
 

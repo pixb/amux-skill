@@ -167,3 +167,35 @@ against the freshly rebuilt container.
   VERIFICATION.md regenerated `clean: true`, fingerprint
   `583702805f78e6f641628f9cee3620f78dd03e9c542d2a887b615988f902a58d`;
   CJK sweep 0 hits; token/LAN-IP sweep 0 hits.
+
+## 2026-09-30 — coverage: which project / missing project / submit modes
+
+A project integrating this skill from a LAN agent (no model services on the
+server, code hosted elsewhere) asked three questions §7 did not answer:
+which amux project does a task go to, what if that project does not exist,
+and what is the end-to-end workflow.
+
+- amux has no repo→project registry — the mapping is integration config;
+  discovery is `GET /api/projects`, names normalize through `valid_name`.
+  §7 now states both and gives the ensure-exists recipe.
+- ensure-exists is idempotent and was verified against the live container:
+  `PUT expect_rev:0` → 200 on create; → 409 `revision conflict: expected 0,
+  current N` on an existing project (store's revision check, mapped to 409
+  by `configure`) = already there, treat as success. Edit still needs GET
+  revision first.
+- three submit modes, now a table: `lane` (board cards + `session` — the
+  only mode that works without intake models: `commands` answers 202 and
+  the row stays pending forever because intake returns when no model client
+  is wired, measured on this deployment), `command` (async decomposition
+  into `project_group` cards), `project_group` (not shipped: create
+  reports the key in `ignored_fields`, the card lands unowned).
+- header rule measured for the lane mode: with `X-Amux-Worker` present,
+  `session` must equal that worker or create → 403
+  `cross_board_create_forbidden`; omit the header for cross-lane filing.
+  Companion AGENTS.md's bullets now point at §7 for discovery + modes
+  instead of naming `commands` as THE submission path.
+- evidence: `validate.py` VALID (0 warnings); `security_scan.py` CLEAN;
+  `skill_graph.py run --cache <fresh>` spec/security/pipeline/eval_schema
+  all PASS; `run_evals.py` 24/24 (default), `--validate` VALID, `--rollout`
+  24/24 with `remote-401` held out; `evolve.py` all checks fresh and green;
+  CJK sweep 0 hits; token/LAN-IP sweep 0 hits.

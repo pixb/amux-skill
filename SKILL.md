@@ -216,6 +216,58 @@ A project is a task container (board cards carrying `project_group`). You submit
 an **outcome**; the server's intake decomposes it asynchronously into cards,
 which the project's dedicated worker then executes.
 
+**Which project?** amux has no repo→project registry — the local-project →
+amux-project name mapping is YOUR integration config (one name per project;
+normalize it through `valid_name`: starts `[a-z0-9]`, then `[a-z0-9_-]`,
+≤48 chars — `MyRepo` → `myrepo`). Both calls below are operator calls (no
+`X-Amux-Worker` header):
+
+```bash
+# discover: 200 {measured, n_considered, projects:[{name, revision, policy, ...}]}
+curl -sk -H "Authorization: Bearer $AMUX_AUTH_TOKEN" "$AMUX_URL/api/projects"
+
+# ensure-exists, idempotent: 200 = created; 409 "revision conflict:
+# expected 0, current N" = already there → treat as success, use it as-is
+curl -sk -X PUT -H "Authorization: Bearer $AMUX_AUTH_TOKEN" -H 'Content-Type: application/json' \
+  -d '{"expect_rev":0,"policy":{"repository":"/abs/path/or/placeholder",
+       "coordinator":{"provider":"claude","model":"<model>"},
+       "executor":{"provider":"codex","model":"<model>"},
+       "verify_command":"<command>"}}' \
+  "$AMUX_URL/api/projects/<name>"
+```
+
+- Those four policy fields are the minimum. `repository` is checked for
+  absolute-path SHAPE only — a path this host cannot reach is legal while
+  `enabled` is false, and omitting `enabled` defaults it to false (the driver
+  refuses every run: `project_paused_or_disabled`). So a project can exist
+  purely as a config record on a host that never holds the code.
+- To EDIT an existing project: `GET` its `revision` first and send it back;
+  `expect_rev:0` on an existing project is always 409, never an overwrite.
+
+**Submit modes** — declare one per integration (your config, e.g.
+`amux_submit_mode`); do not probe at runtime, a probe parks rows:
+
+| mode | server capability | submit task as | read tasks back |
+|---|---|---|---|
+| `lane` | no intake models | `POST /api/board` with `session:"<project>"` (+`tags`) | `GET /api/board?session=<project>` |
+| `command` | intake models configured | `POST /api/projects/<name>/commands` → 202 | poll `GET /api/projects/<name>` → `cards` |
+| `project_group` | build with project-group attach (not yet shipped) | `POST /api/board` with `project_group:"<project>"` | `GET /api/projects/<name>` → `cards` |
+
+- `lane` mode: never submit via `commands` — it answers 202 and, with no
+  model client wired, intake returns immediately and the row stays pending
+  forever.
+- `lane` mode: omit `X-Amux-Worker`. With the header present, `session` must
+  equal that worker or the create → 403 `cross_board_create_forbidden`.
+- `session` is a first-class board filter; `?tag=` is NOT one — it is dropped
+  with an ignored-param WARN and the unfiltered answer comes back
+  (BACKE-3228).
+- `project_group` is not writable yet: create/PATCH report the key in
+  `ignored_fields` and the card lands unowned. Confirm the response no
+  longer lists it before relying on the mode.
+- The project board (`GET /api/projects/<name>` → `cards`) only ever shows
+  `project_group` cards — in `lane` mode it reads `cards: []` while the lane
+  holds the work. Expected, not a bug.
+
 ```bash
 # list / one project's board (tasks, commands, acceptance state)
 curl -sk -H "Authorization: Bearer $AMUX_AUTH_TOKEN" "$AMUX_URL/api/projects"
