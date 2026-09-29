@@ -142,6 +142,44 @@ No artifact? Write `"source_ref":"none: <reason>"` (it is recorded and counted,
 not a bypass).
 Gate details: `GET /api/board/contract?card=AMUX-1`.
 
+**Leases on `doing` cards (RR-0052).** Claiming or transitioning into `doing`
+grants the holder a lease: `lease_expires_at = now + AMUX_LEASE_TTL_S`
+(default 1800 s; server env, not exposed as a card field). Every 60 s a reaper
+reclaims an expired `doing` card back to `todo` — but only when it can prove
+the holder stopped: `holder_mid_turn` / `holder_child_work` renew the lease
+instead; `holder_not_running` (no live worker process) and
+`holder_idle_past_ttl` reclaim it.
+
+- **Renews:** a session self-report `POST /api/sessions/{name}/report` (404
+  unless that session's env file exists; `state` must be one of
+  `active|idle|waiting|blocked|error`; written at most once per 60 s); any
+  real status transition across `doing`; the reaper itself while the holder
+  is proven live. Watch `last.lease_reaper.{reclaimed,extended,
+  heartbeats_total}` on `GET /api/debug/board-drive` — `heartbeats_total: 0`
+  on a busy holder means the renewal path is broken and a reap is coming.
+- **Does NOT renew:** PATCHes of other fields (`desc`, `next_action`, ...); a
+  `doing` → `doing` PATCH (no status change → no transition → no lease
+  write); re-claiming a card you already hold in `doing` (only a
+  `task.claimed` marker is recorded).
+- **Cross-lane move:** a named non-holder worker moving a leased card gets
+  `409` with `error:"lease_held"` and a `lease` block (`heartbeat_at`,
+  `heartbeat_age_s`, `expires_at`, ...) — but only when `AMUX_LEASE_ENFORCE`
+  is on. It defaults off, where the attempt is logged
+  (`verdict="lease_would_refuse"`) and allowed; `force` (attribution +
+  reason) and unstamped/anonymous callers bypass the guard either way.
+- **Reclaim evidence:** the holder's session stream gets
+  `task.lease_reclaimed`; the card's advance log reads
+  `Auto-reclaimed: lease expired (<reason>) ... (RR-0052)`; the server log
+  marker is `verdict="lease_reclaimed"`.
+
+**A lane with no worker process loses every lease** — its verdict is always
+`holder_not_running`, so an HTTP-driven card round-trips
+`doing → todo → doing` each TTL however active its client is (measured: two
+forced reclaims of one card within an hour; amux `frustrations.md` AF-958).
+Keep long waits in `backlog`/`todo` and move only the active sub-step into
+`doing`, or raise `AMUX_LEASE_TTL_S` server-side, or keep a real session's
+report heartbeat alive.
+
 ## 3. Workers / Sessions
 
 ```bash

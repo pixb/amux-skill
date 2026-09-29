@@ -290,3 +290,52 @@ question: "a path **this host** cannot reach" is ambiguous about which host.
   `--validate` VALID, `--rollout` 24/24 with `remote-401` held out;
   `evolve.py` all checks fresh and green; CJK sweep 0 hits; token/LAN-IP
   sweep 0 hits.
+
+## 2026-09-30 — coverage: `doing` leases (RR-0052): TTL, heartbeat, reaper, and the no-worker lane
+
+A LAN agent asked four lease questions — is there a renew endpoint, is the
+TTL configurable, do PATCHes/claims renew it, and what should an
+HTTP-driven/project lane do when its cards keep getting reclaimed. §2
+documented claims, gates and done-evidence but was silent on leases; the
+answers below (read from code, measured against the live server) are now in
+§2.
+
+- **Q1 renew endpoint:** none exists. The only heartbeat is the session
+  self-report `POST /api/sessions/{name}/report` (verb route
+  `/api/sessions/{name}/{*verb}`): it 404s without the session's env file
+  (measured: `session '__probe_nosuch__' not found`), requires `state` of
+  `active|idle|waiting|blocked|error` (400 otherwise), is throttled to one
+  write per holder per 60 s, and only touches cards whose lease columns are
+  already set. Native-status reports heartbeat on their own path. Status
+  transitions themselves (re)grant/clear leases via `apply_lease_transition`.
+- **Q2 TTL:** `AMUX_LEASE_TTL_S`, default 1800 s (measured: no `AMUX_LEASE_*`
+  key in `server.env`, so this deployment runs the default). Enforcement is
+  separate: `AMUX_LEASE_ENFORCE` defaults off — a named non-holder's move
+  logs `verdict="lease_would_refuse"` and proceeds; on, it is WARN
+  `verdict="lease_held_refused"` plus `409` with `error:"lease_held"` and a
+  `lease` block (`heartbeat_at`, `heartbeat_age_s`, `expires_at`).
+- **Q3 does not renew:** field-only PATCHes never touch lease columns; a
+  `doing` → `doing` PATCH never enters the transition block (guard
+  `from != Some(target) || rechecking_verified`); re-claiming a card you
+  already hold in `doing` only inserts a `task.claimed` row
+  (`ensure_owner_doing_claim`).
+- **Q4 reaper:** on a 60 s drive tick, `lease_verdict` reclaims on
+  `holder_not_running` / `holder_idle_past_ttl` and renews on
+  `holder_mid_turn` / `holder_child_work`. Measured live on PBPA-1 (lane
+  `pix-bbs-publish-article`, no worker process → always `holder_not_running`):
+  `2026-09-29T19:53:36Z` and `2026-09-29T20:26:36Z`, both
+  `reason="holder_not_running" verdict="lease_reclaimed"` — two forced
+  reclaims inside one hour of active work, because no renewal path exists
+  for an HTTP-driven holder (amux `frustrations.md` AF-958). §2 now carries
+  the three workarounds: park long waits in backlog/todo, raise the TTL
+  server-side, or keep a real session's report heartbeat alive; the reaper's
+  counters live at `last.lease_reaper.{reclaimed,extended,heartbeats_total}`
+  on `GET /api/debug/board-drive` (`heartbeats_total: 0` measured while no
+  session exists to heartbeat).
+- evidence: `validate.py` VALID (no issues); `security_scan.py` CLEAN;
+  `skill_graph.py build` + `run --cache .skill-cache/gates.json` spec PASS,
+  security PASS, pipeline/eval_schema CACHED on unchanged inputs ("skill
+  graph OK"); `run_evals.py` 24/24 (default, from the skill root),
+  `--validate` VALID, `--rollout` 24/24 with `remote-401` held out;
+  `evolve.py` all checks fresh and green; CJK sweep 0 hits; token/LAN-IP
+  sweep 0 hits.
