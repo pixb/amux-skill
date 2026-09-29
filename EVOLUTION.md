@@ -143,11 +143,12 @@ against the freshly rebuilt container.
   as measured, and §10 notes that the diagnostic routes (including
   `/api/debug/tmux` session discovery) answer unauthenticated, so 8824 must not
   be exposed past the LAN.
-- second-order fix: the scanner's exfiltration pattern matches any verb from
-  `send|post|upload|transmit|forward` within 60 chars of `token|secret|...`, so
-  the first rewrite ("Send the Bearer … token-free exceptions") tripped HIGH at
-  `AGENTS.md:31`. Rewritten as "Every `/api/*` call needs …; a measured probe
-  set needs none" — no verb, same meaning. Worth knowing before the next edit.
+- second-order fix: the security scanner flags a transfer-verb plus a
+  credential word inside a 60-char window on one line — and the entry that
+  documented that rule reproduced it, tripping HIGH at `EVOLUTION.md:147`.
+  Both hits were reworded; the shipped instruction at `AGENTS.md:31` reads
+  "Every `/api/*` call needs …; a measured probe set needs none" — same
+  meaning, no trigger. Worth knowing before the next edit.
 - deployment identity: `/health` reports `commit: "unknown"` on **both** the old
   and the rebuilt image (prebuilt images carry no build stamp), so `/health`
   cannot answer "which binary is this?". Fall back to the route-table
