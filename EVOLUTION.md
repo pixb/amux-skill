@@ -199,3 +199,39 @@ and what is the end-to-end workflow.
   all PASS; `run_evals.py` 24/24 (default), `--validate` VALID, `--rollout`
   24/24 with `remote-401` held out; `evolve.py` all checks fresh and green;
   CJK sweep 0 hits; token/LAN-IP sweep 0 hits.
+
+## 2026-09-30 — coverage: create default status, slim list rows, export payload key
+
+A LAN integration mirroring its board asked whether two response shapes were
+quirks or typos — the export payload carrying `issues` (no `cards`/`items`)
+under `{count, desc, exported_at, scope, scoped}`, and list rows carrying
+only `desc_head`/`desc_len` — plus whether create's default `status=todo`
+(not `backlog`) is intended.
+
+- both shapes are designed, and the server says so in-line. Export
+  (`GET /api/board/export?format=json|md`) builds
+  `{"exported_at","count","scoped","scope","desc","issues"}` where `desc`
+  is a self-describing note ("complete — unlike GET /api/board, which
+  sends desc_head/desc_len only"), added so nobody has to diff it against
+  the list to discover the difference; `issues` names the underlying
+  table. The list endpoint intentionally sends slim rows — absent `desc`
+  (not empty), replaced by `desc_head`/`desc_len` plus a `slim` array
+  naming every dropped field — and its own doc comment points at the two
+  full-text routes: fetch the single card, or export.
+- create's default is hard-coded `todo`; wanting `backlog` means passing
+  it on every call. The distinction matters more than the default does:
+  `todo` is the dispatch-checked population (`todo_is_reachable_by_dispatch`
+  + lane todo WIP limits) while `backlog` is checked by neither — so a
+  record lane with no workers should file `backlog` explicitly rather
+  than mirror its whole board into an invariant failure (the AF-957
+  class). A todo filed on an isolated lane is stored as `backlog` behind
+  the `todo_defaulted_to_backlog` log marker.
+- §2 now states the create default, the todo/backlog dispatch semantics,
+  the slim-row contract, and both full-text routes; §7's `lane` mode row
+  and bullets now require an explicit `status`.
+- evidence: `validate.py` VALID (no issues); `security_scan.py` CLEAN;
+  `skill_graph.py build` + `run --cache <fresh>` spec/security/
+  pipeline/eval_schema all PASS; `run_evals.py` 24/24 (default),
+  `--validate` VALID, `--rollout` 24/24 with `remote-401` held out;
+  `evolve.py` all checks fresh and green; CJK sweep 0 hits; token/LAN-IP
+  sweep 0 hits.

@@ -98,6 +98,24 @@ curl -sk -X POST -H "Authorization: Bearer $AMUX_AUTH_TOKEN" -H 'Content-Type: a
 Status flow: `backlog` → `todo` → `doing` → `done` (`done ≠ verified` — they are
 two separate gates).
 
+**Create defaults to `status:"todo"`** — omit `status` and the card lands in
+`todo`, not `backlog`. `todo` is the *dispatch-checked* population: the
+`todo_is_reachable_by_dispatch` invariant counts managed todo cards on lanes
+with no registered worker as failures (amux `frustrations.md` AF-957), and
+lane todo WIP limits apply to them. A record lane (a project session with no
+workers) should pass `"status":"backlog"` explicitly — `backlog` is checked
+by neither. A todo filed on an isolated lane is silently stored as `backlog`
+anyway; look for the `todo_defaulted_to_backlog` log marker.
+
+**Reading full text.** `GET /api/board` returns *slim* rows: `desc` is
+absent — not empty — replaced by `desc_head` + `desc_len`, and a `slim`
+array names every dropped field. Read `desc_len`/`slim`, or fetch the whole
+card. Full description comes from `GET /api/board/{id}`, or from
+`GET /api/board/export?format=json|md` — whose payload key is **`issues`**
+(there is no `cards`/`items`; it names the underlying table) and whose
+`desc` field is a self-describing note about completeness, not card
+content.
+
 **Gates.** Advancing status on gated types (`code` and most others) is
 intercepted. **That is not a failure, it is a request to confirm:**
 
@@ -249,7 +267,7 @@ curl -sk -X PUT -H "Authorization: Bearer $AMUX_AUTH_TOKEN" -H 'Content-Type: ap
 
 | mode | server capability | submit task as | read tasks back |
 |---|---|---|---|
-| `lane` | no intake models | `POST /api/board` with `session:"<project>"` (+`tags`) | `GET /api/board?session=<project>` |
+| `lane` | no intake models | `POST /api/board` with `session:"<project>"` (+`status`, +`tags`) | `GET /api/board?session=<project>` |
 | `command` | intake models configured | `POST /api/projects/<name>/commands` → 202 | poll `GET /api/projects/<name>` → `cards` |
 | `project_group` | build with project-group attach (not yet shipped) | `POST /api/board` with `project_group:"<project>"` | `GET /api/projects/<name>` → `cards` |
 
@@ -261,6 +279,8 @@ curl -sk -X PUT -H "Authorization: Bearer $AMUX_AUTH_TOKEN" -H 'Content-Type: ap
 - `session` is a first-class board filter; `?tag=` is NOT one — it is dropped
   with an ignored-param WARN and the unfiltered answer comes back
   (BACKE-3228).
+- `lane` mode: pass `status` explicitly — create defaults to `todo`, the
+  dispatch-checked population (§2); a record lane wants `backlog`.
 - `project_group` is not writable yet: create/PATCH report the key in
   `ignored_fields` and the card lands unowned. Confirm the response no
   longer lists it before relying on the mode.
