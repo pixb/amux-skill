@@ -48,6 +48,12 @@
       "stderr": "",
       "stdout": "{\n  \"clean\": true,\n  \"issues\": []\n}\n"
     },
+    "497b3e9ed0b4da583162a4182bbadabeb7576d071c9f0cedf9713f2f59ef6dde": {
+      "duration_ms": 89.111,
+      "exit_code": 0,
+      "stderr": "",
+      "stdout": "{\n  \"clean\": true,\n  \"issues\": []\n}\n"
+    },
     "4a4fd7bb343241aedcb363053ab777ece6063519c5a34c3e7d6dd3d2bceb7eae": {
       "duration_ms": 253.912,
       "exit_code": 0,
@@ -104,6 +110,18 @@
     },
     "af502b3fa4fa9ad3ffb50a0cb29cd1beeb4f1a2305afcc991b7a73e91c6c48c2": {
       "duration_ms": 88.012,
+      "exit_code": 0,
+      "stderr": "",
+      "stdout": "{\n  \"clean\": true,\n  \"issues\": []\n}\n"
+    },
+    "affed0e0a1365f9fdbb65eadf64ad004c41cf3adb8e86e822b598a33b613bb49": {
+      "duration_ms": 64.432,
+      "exit_code": 0,
+      "stderr": "",
+      "stdout": "{\n  \"valid\": true,\n  \"errors\": [],\n  \"warnings\": []\n}\n"
+    },
+    "b4aabfb05a8cccd8fe740f5d04cfda3e4c744874e50e6db5fa66cbc60c232052": {
+      "duration_ms": 93.799,
       "exit_code": 0,
       "stderr": "",
       "stdout": "{\n  \"clean\": true,\n  \"issues\": []\n}\n"
