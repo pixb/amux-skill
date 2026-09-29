@@ -77,6 +77,12 @@
       "exit_code": 0,
       "stderr": "",
       "stdout": "{\n  \"errors\": [],\n  \"warnings\": []\n}\n"
+    },
+    "f95890aaf06fc4db3adf0e07046c48d4fba1117c03638d203c4f5ab969842b9b": {
+      "duration_ms": 81.997,
+      "exit_code": 0,
+      "stderr": "",
+      "stdout": "{\n  \"clean\": true,\n  \"issues\": []\n}\n"
     }
   },
   "version": 1
